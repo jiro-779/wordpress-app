@@ -1,0 +1,11 @@
+resource "aws_route53_record" "wordpress" {
+  zone_id = data.terraform_remote_state.platform.outputs.route53_zone_id
+  name    = "jiro.c-loud.am"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.wordpress.dns_name
+    zone_id                = aws_lb.wordpress.zone_id
+    evaluate_target_health = true
+  }
+}
