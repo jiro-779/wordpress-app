@@ -5,11 +5,25 @@ on:
   push:
     branches:
       - main
+
   workflow_dispatch:
+    inputs:
+      action:
+        description: "Select Terraform action"
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+        default: plan
 
 permissions:
   id-token: write
   contents: read
+
+concurrency:
+  group: terraform-app-dev
+  cancel-in-progress: false
 
 jobs:
   terraform:
@@ -28,18 +42,6 @@ jobs:
         with:
           terraform_version: 1.15.8
 
-      - name: Check OIDC token claims
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const token = await core.getIDToken('sts.amazonaws.com');
-            const payload = JSON.parse(
-              Buffer.from(token.split('.')[1], 'base64url').toString()
-            );
-            console.log('issuer:', payload.iss);
-            console.log('audience:', payload.aud);
-            console.log('subject:', payload.sub);
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
@@ -54,7 +56,21 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
-        
+
       - name: Terraform Plan
+        if: ${{ inputs.action != 'destroy' }}
         run: terraform plan -var-file="config/dev.tfvars" -out=tfplan
+
+      - name: Terraform Apply
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' && github.ref == 'refs/heads/main' }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Destroy Plan
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' && github.ref == 'refs/heads/main' }}
+        run: terraform plan -destroy -var-file="config/dev.tfvars" -out=destroyplan
+
+      - name: Terraform Destroy
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'destroy' && github.ref == 'refs/heads/main' }}
+        run: terraform apply -auto-approve destroyplan
+
 
