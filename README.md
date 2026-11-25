@@ -91,3 +91,18 @@ Infrastructure resources were destroyed after testing to avoid unnecessary AWS c
 Junior DevOps / Cloud Engineer
 
 [GitHub Profile](https://github.com/jiro-779)
+
+
+## Deployment Screenshots
+
+### Successful Application Deployment
+
+![Application Deployment](./app-deployment.png)
+
+### Amazon RDS MySQL Database
+
+![RDS Database](./rds-database.png)
+
+### Healthy Load Balancer Target
+
+![Healthy Target Group](./target-group-healthy.png)
